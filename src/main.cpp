@@ -226,6 +226,6 @@ if (irrecv.decode(&results)) {
 	}
 	//*/
 	LED();
-    PrintPWM();
+    // PrintPWM();
 	if (FADE == true){Fade();};
 }

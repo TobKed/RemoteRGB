@@ -26,16 +26,26 @@
 #define b_c3_r6 0xF76897
 #define b_c4_r6 0xF7E817
 
-// PINS
+// PINSC
 #define RED 10
 #define GREEN 5
 #define BLUE 3
+
+/* REMOTE BUTTONS LAYOUT AND CODES
+b_Bp	0xF700FF	b_Bm	0xF7807F	b_OFF 	0xF740BF	b_ON	0xF7C03F
+b_R		0xF720DF	b_G		0xF7A05F	b_B		0xF7609F	b_W		0xF7E01F
+b_c1_r3	0xF710EF	b_c2_r3	0xF7906F	b_c3_r3	0xF750AF	b_c4_r3	0xF7D02F
+b_c1_r4	0xF730CF	b_c2_r4	0xF7B04F	b_c3_r4	0xF7708F	b_c4_r4	0xF7F00F
+b_c1_r5	0xF708F7	b_c2_r5	0xF78877	b_c3_r5	0xF748B7	b_c4_r5	0xF7C837
+b_c1_r6	0xF728D7	b_c2_r6	0xF7A857	b_c3_r6	0xF76897	b_c4_r6	0xF7E817
+*/
 
 // FUNCTIONS
 void setup();
 void loop();
 void CatchRemoteSignals();
 void LED();
+void SetPWM(int colors[3]);
 void Fade();
 void PrintPWM();
 
@@ -68,10 +78,36 @@ float angle_step = DEG_TO_RAD/10; 		// 0.1°  (0.001745329252 rad)
 unsigned long lastSinusTIme = 0;
 unsigned long sinusDelay = 5;
 
-
+// BOOLS
 bool ON = false;
+bool* ON_pointer = &ON;
 bool FADE = false;
 
+
+// COLORS
+int OFF[3] = 	{0, 0, 0};
+int WHITE[3] = 	{255, 255, 255};
+
+int R_1[3] = 	{255, 0, 0};
+int R_2[3] = 	{255, 51, 0};
+int R_3[3] = 	{254, 103, 0};
+int R_4[3] = 	{254, 153, 0};
+int R_5[3] = 	{255, 204, 0};
+
+int G_1[3] = 	{0, 255, 0};
+int G_2[3] = 	{0, 254, 100};
+int G_3[3] = 	{0, 255, 202};
+int G_4[3] = 	{0, 204, 253};
+int G_5[3] = 	{0, 153, 253};
+
+int B_1[3] = 	{0, 0, 255};
+int B_2[3] = 	{50, 1, 253};
+int B_3[3] = 	{101, 0, 254};
+int B_4[3] = 	{151, 0, 253};
+int B_5[3] = 	{204, 0, 255};
+
+
+// int testArray[5] ={RED, R2, R3, R4, R5};
 
 void setup() {
 	Serial.begin(9600);
@@ -103,69 +139,76 @@ void CatchRemoteSignals() {
 		switch (results.value) {
 			//case 0xF7C03F:
 			case b_ON:
-				Serial.println("ON");
-				//LED(254, 254, 254);
-				PWM[0] = 254; PWM[1] = 254; PWM[2] = 254;
+				// Serial.println("ON");
 				ON = true;
+				SetPWM(WHITE);
 				break;
 
 			case b_OFF:
-				Serial.println("OFF");
-				//LED(0, 0, 0);
+				// Serial.println("OFF");
 				FADE = false;
-				PWM[0] = 0; PWM[1] = 0; PWM[2] = 0;
 				ON = false;
+				SetPWM(OFF);
 				break;
 
 			case b_B_m:
-				Serial.println("B-");
+				// Serial.println("B-");
 				if (BRIGHTNESS > 0){ BRIGHTNESS--;}
+				else {BRIGHTNESS=0;}
 				break;
 
 			case b_B_p:
-				Serial.println("B+");
-				if (BRIGHTNESS < 256){ BRIGHTNESS++;}
+				// Serial.println("B+");
+				if (BRIGHTNESS <= 255) { BRIGHTNESS++;}
+				else {BRIGHTNESS=255;}
 				break;
 
 
 			case b_R:   // red
-				if (ON == true) {
-					//LED(254, 0, 0);
-					FADE = false;
-					PWM[0] = 254; PWM[1] = 0; PWM[2] = 0; }
-				Serial.println("red");
+				// if (ON == true) {
+				// 	FADE = false;
+				// 	SetPWM(R_1);
+				// 	}
+				SetPWM(R_1);
+				// Serial.println("red");
 				break;
 
 			case b_G:   // green
-				if (ON == true) {
-					//LED(0, 254, 0);
-					FADE = false;
-					PWM[0] = 0; PWM[1] = 254; PWM[2] = 0; }
-				Serial.println("green");
+				// if (ON == true) {
+				// 	FADE = false;
+				// 	SetPWM(G_1);
+				// 	}
+				SetPWM(G_1);
+				// Serial.println("green");
 				break;
 
 			case b_B:   // blue
-				if (ON == true) {
-					// LED(0, 0, 254);
-					FADE = false;
-					PWM[0] = 0; PWM[1] = 0; PWM[2] = 254; }
-				Serial.println("blue");
+				// if (ON == true) {
+				// 	// LED(0, 0, 254);
+				// 	FADE = false;
+				// 	SetPWM(B_1);
+				// 	}
+				SetPWM(B_1);
+				// Serial.println("blue");
 				break;
 
 			case b_W:   // white
-				if (ON == true) {
-					// LED(254, 254, 254);
-					FADE = false;
-					PWM[0] = 254; PWM[1] = 254; PWM[2] = 254; }
-				Serial.println("white");
+				// if (ON == true) {
+				// 	// LED(254, 254, 254);
+				// 	FADE = false;
+				// 	SetPWM(WHITE);
+				// 	}
+				SetPWM(WHITE);
+				// Serial.println("white");
 				break;
 
 			case b_c4_r5:   // fade
 				if (ON == true) {
 					// LED(254, 254, 254);
 					if (FADE == false) {FADE = true;}
-					else {FADE = false;}; }
-				Serial.println("fade");
+					else {FADE = false;}
+					}
+				// Serial.println("fade");
 				break;
 
 			} // end of switch (results.value)
@@ -192,6 +235,26 @@ void LED() {
 	analogWrite(BLUE, PWM[2]);
 } // end of void LED()
 
+void SetPWM(int color[3]) {
+		// for(int i = 0; i<3; i++) {PWM[i] = color[i];
+		// 	}
+
+
+		if (ON == true) {
+			FADE = false;
+			for(int i = 0; i<3; i++)
+				{PWM[i] = color[i];
+				}
+			}
+		else {
+			for(int i = 0; i<3; i++)
+				{PWM[i] = 0;
+					}
+				}
+
+
+}
+
 void Fade () {
 	// int step_multiplier = 1000;
 	if (ON == true) {
@@ -212,33 +275,41 @@ void Fade () {
 	} // end of void Fade ()
 
 void PrintPWM() {
-    if ( millis() % 300 == 0) {
-        Serial.print("R: ");
+    if ( millis() % 200 == 0) {
+        // Serial.print("R: ");
         Serial.print(PWM[0]);
-		Serial.print("\t");
-        Serial.print(step_multiplier[0]);
-		Serial.print("\t");
-		Serial.print(angle[0]);
-		Serial.print("\t");
-		Serial.print(sin_change[0]);
-
-        Serial.print("\t G: ");
+		// Serial.print("\t");
+        // Serial.print(step_multiplier[0]);
+		// Serial.print("\t");
+		// Serial.print(angle[0]);
+		// Serial.print("\t");
+		// Serial.print(sin_change[0]);
+        //
+        // Serial.print("\t G: ");
+		Serial.print(" ");
         Serial.print(PWM[1]);
-		Serial.print("\t");
-		Serial.print(step_multiplier[1]);
-		Serial.print("\t");
-		Serial.print(angle[1]);
-		Serial.print("\t");
-		Serial.print(sin_change[1]);
-
-        Serial.print("\t B: ");
+		// Serial.print("\t");
+		// Serial.print(step_multiplier[1]);
+		// Serial.print("\t");
+		// Serial.print(angle[1]);
+		// Serial.print("\t");
+		// Serial.print(sin_change[1]);
+        //
+        // Serial.print("\t B: ");
+		Serial.print(" ");
         Serial.print(PWM[2]);
-		Serial.print("\t");
-		Serial.print(step_multiplier[2]);
-		Serial.print("\t");
-		Serial.print(angle[2]);
-		Serial.print("\t");
-		Serial.print(sin_change[2]);
+		// Serial.print("\t");
+		// Serial.print(step_multiplier[2]);
+		// Serial.print("\t");
+		// Serial.print(angle[2]);
+		// Serial.print("\t");
+		// Serial.print(sin_change[2]);
+
+		Serial.print(" ");
+        Serial.print(millis());
+        //
+		// Serial.print(" ");
+		// Serial.print(ON);
 
         Serial.print("\n");
 

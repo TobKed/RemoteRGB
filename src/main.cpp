@@ -1,44 +1,50 @@
 #include <Arduino.h>
 #include <IRremote.h>
+
 #define irPin 9
 #define b_B_m 0xF7807F
 #define b_B_p 0xF700FF
 #define b_OFF 0xF740BF
 #define b_ON 0xF7C03F
-#define b_R 0xF720DF
-#define b_G 0xF7A05F
-#define b_B 0xF7609F
-#define b_W 0xF7E01F
-#define b_c1_r3 0xF710EF
-#define b_c2_r3 0xF7906F
-#define b_c3_r3 0xF750AF
-#define b_c4_r3 0xF7D02F
-#define b_c1_r4 0xF730CF
-#define b_c2_r4 0xF7B04F
-#define b_c3_r4 0xF7708F
-#define b_c4_r4 0xF7F00F
-#define b_c1_r5 0xF708F7
-#define b_c2_r5 0xF78877
-#define b_c3_r5 0xF748B7
-#define b_c4_r5 0xF7C837
-#define b_c1_r6 0xF728D7
-#define b_c2_r6 0xF7A857
-#define b_c3_r6 0xF76897
-#define b_c4_r6 0xF7E817
+
+#define b_R_1 0xF720DF
+#define b_R_2 0xF710EF
+#define b_R_3 0xF730CF
+#define b_R_4 0xF708F7
+#define b_R_5 0xF728D7
+
+#define b_G_1 0xF7A05F
+#define b_G_2 0xF7906F
+#define b_G_3 0xF7B04F
+#define b_G_4 0xF78877
+#define b_G_5 0xF7A857
+
+#define b_B_1 0xF7609F
+#define b_B_2 0xF750AF
+#define b_B_3 0xF7708F
+#define b_B_4 0xF748B7
+#define b_B_5 0xF76897
+
+#define b_W_1 0xF7E01F
+#define b_W_2 0xF7D02F
+#define b_W_3 0xF7F00F
+#define b_W_4 0xF7C837
+#define b_W_5 0xF7E817
+
+/* REMOTE BUTTONS LAYOUT AND CODES
+b_Bp	0xF700FF	b_Bm	0xF7807F	b_OFF 	0xF740BF	b_ON	0xF7C03F
+b_R_1	0xF720DF	b_G_1	0xF7A05F	b_B_1	0xF7609F	b_W_1	0xF7E01F
+b_R_2	0xF710EF	b_G_2	0xF7906F	b_B_2	0xF750AF	b_W_2	0xF7D02F
+b_R_3	0xF730CF	b_G_3	0xF7B04F	b_B_3	0xF7708F	b_W_3	0xF7F00F
+b_R_4	0xF708F7	b_G_4	0xF78877	b_B_4	0xF748B7	b_W_4	0xF7C837
+b_R_5	0xF728D7	b_G_5	0xF7A857	b_B_5	0xF76897	b_W_5	0xF7E817
+*/
 
 // PINSC
 #define RED 10
 #define GREEN 5
 #define BLUE 3
 
-/* REMOTE BUTTONS LAYOUT AND CODES
-b_Bp	0xF700FF	b_Bm	0xF7807F	b_OFF 	0xF740BF	b_ON	0xF7C03F
-b_R		0xF720DF	b_G		0xF7A05F	b_B		0xF7609F	b_W		0xF7E01F
-b_c1_r3	0xF710EF	b_c2_r3	0xF7906F	b_c3_r3	0xF750AF	b_c4_r3	0xF7D02F
-b_c1_r4	0xF730CF	b_c2_r4	0xF7B04F	b_c3_r4	0xF7708F	b_c4_r4	0xF7F00F
-b_c1_r5	0xF708F7	b_c2_r5	0xF78877	b_c3_r5	0xF748B7	b_c4_r5	0xF7C837
-b_c1_r6	0xF728D7	b_c2_r6	0xF7A857	b_c3_r6	0xF76897	b_c4_r6	0xF7E817
-*/
 
 // FUNCTIONS
 void setup();
@@ -47,19 +53,12 @@ void CatchRemoteSignals();
 void LED();
 void SetPWM(int colors[3]);
 void Fade();
+void SmoothChange ();
 void PrintPWM();
 
 
 IRrecv irrecv(irPin);
 decode_results results;
-
-
-int PWM[3] = {0, 0, 0};  // red, green, blue
-int BRIGHTNESS = 255;
-float step_multiplier[3] = {90, 100, 110};
-float angle[3] = {0, 0, 0};
-float sin_change[3] = {0, 0, 0};
-
 
 /*
 #define PI 3.1415926535897932384626433832795
@@ -73,41 +72,57 @@ float deg_90 = HALF_PI;
 float deg_180 = PI;
 float deg_270 = deg_90+deg_180;
 float deg_360 = TWO_PI;
-// float angle_step = 0.0061419211214; 	// 0.35190615836°
 float angle_step = DEG_TO_RAD/10; 		// 0.1°  (0.001745329252 rad)
 unsigned long lastSinusTIme = 0;
 unsigned long sinusDelay = 5;
 
+int PWM[3] = {0, 0, 0};  // red, green, blue
+int BRIGHTNESS = 255;
+float step_multiplier[3] = {80, 120, 160};
+float angle[3] = {deg_270, deg_270, deg_270};
+float sin_change[3] = {0, 0, 0};
+int target_color[3] = {0, 0, 0};
+int start_color[3] = {0, 0, 0};
+int range_color[3] = {0, 0, 0};
+float color_step_multiplier[3] = {300, 300, 300};
+
+
 // BOOLS
 bool ON = false;
-bool* ON_pointer = &ON;
 bool FADE = false;
+bool COLOR_CHANGE = true;
+bool COLOR_UP[3] = {true, true, true};
 
 
 // COLORS
 int OFF[3] = 	{0, 0, 0};
 int WHITE[3] = 	{255, 255, 255};
 
-int R_1[3] = 	{255, 0, 0};
-int R_2[3] = 	{255, 51, 0};
-int R_3[3] = 	{254, 103, 0};
-int R_4[3] = 	{254, 153, 0};
-int R_5[3] = 	{255, 204, 0};
+// row column rgb
+int color_array[5][3][3] = {{{255, 0, 0}, {0, 255, 0}, {0, 0, 255}},
+							{{255, 51, 0}, {0, 254, 100}, {50, 1, 253}},
+							{{254, 103, 0}, {0, 255, 202}, {101, 0, 254}},
+							{{254, 153, 0}, {0, 204, 253}, {151, 0, 253}},
+							{{255, 204, 0}, {0, 153, 253}, {204, 0, 255}}};
 
-int G_1[3] = 	{0, 255, 0};
-int G_2[3] = 	{0, 254, 100};
-int G_3[3] = 	{0, 255, 202};
-int G_4[3] = 	{0, 204, 253};
-int G_5[3] = 	{0, 153, 253};
+int R_1[3] =  	{color_array[0][0][0], color_array[0][0][1], color_array[0][0][2]}; //{255, 0, 0};
+int R_2[3] = 	{color_array[1][0][0], color_array[1][0][1], color_array[1][0][2]}; //{255, 51, 0};
+int R_3[3] = 	{color_array[2][0][0], color_array[2][0][1], color_array[2][0][2]}; //{254, 103, 0};
+int R_4[3] = 	{color_array[3][0][0], color_array[3][0][1], color_array[3][0][2]}; //{254, 153, 0};
+int R_5[3] = 	{color_array[4][0][0], color_array[4][0][1], color_array[4][0][2]}; //{255, 204, 0};
 
-int B_1[3] = 	{0, 0, 255};
-int B_2[3] = 	{50, 1, 253};
-int B_3[3] = 	{101, 0, 254};
-int B_4[3] = 	{151, 0, 253};
-int B_5[3] = 	{204, 0, 255};
+int G_1[3] = 	{color_array[0][1][0], color_array[0][1][1], color_array[0][1][2]}; //{0, 255, 0};
+int G_2[3] = 	{color_array[1][1][0], color_array[1][1][1], color_array[1][1][2]}; //{0, 254, 100};
+int G_3[3] = 	{color_array[2][1][0], color_array[2][1][1], color_array[2][1][2]}; //{0, 255, 202};
+int G_4[3] = 	{color_array[3][1][0], color_array[3][1][1], color_array[3][1][2]}; //{0, 204, 253};
+int G_5[3] = 	{color_array[4][1][0], color_array[4][1][1], color_array[4][1][2]}; //{0, 153, 253};
 
+int B_1[3] = 	{color_array[0][2][0], color_array[0][2][1], color_array[0][2][2]}; //{0, 0, 255};
+int B_2[3] = 	{color_array[1][2][0], color_array[1][2][1], color_array[1][2][2]}; //{50, 1, 253};
+int B_3[3] = 	{color_array[2][2][0], color_array[2][2][1], color_array[2][2][2]}; //{101, 0, 254};
+int B_4[3] = 	{color_array[3][2][0], color_array[3][2][1], color_array[3][2][2]}; //{151, 0, 253};
+int B_5[3] = 	{color_array[4][2][0], color_array[4][2][1], color_array[4][2][2]}; //{204, 0, 255};
 
-// int testArray[5] ={RED, R2, R3, R4, R5};
 
 void setup() {
 	Serial.begin(9600);
@@ -119,199 +134,150 @@ void setup() {
 
 void loop() {
 	CatchRemoteSignals();
+	SmoothChange();
 	LED();
     PrintPWM();
 	if (FADE == true) {Fade(); }
 }
 
-void CatchRemoteSignals() {
-		/*
-	if (irrecv.decode(&results)) {
-	Serial.print("0x");
-	Serial.println(results.value, HEX);
-	delay(250);
-	irrecv.resume();
-	}
-	*/
-
-	///*
-	if (irrecv.decode(&results)) {
-		switch (results.value) {
-			//case 0xF7C03F:
-			case b_ON:
-				// Serial.println("ON");
-				ON = true;
-				SetPWM(WHITE);
-				break;
-
-			case b_OFF:
-				// Serial.println("OFF");
-				FADE = false;
-				ON = false;
-				SetPWM(OFF);
-				break;
-
-			case b_B_m:
-				// Serial.println("B-");
-				if (BRIGHTNESS > 0){ BRIGHTNESS--;}
-				else {BRIGHTNESS=0;}
-				break;
-
-			case b_B_p:
-				// Serial.println("B+");
-				if (BRIGHTNESS <= 255) { BRIGHTNESS++;}
-				else {BRIGHTNESS=255;}
-				break;
-
-
-			case b_R:   // red
-				// if (ON == true) {
-				// 	FADE = false;
-				// 	SetPWM(R_1);
-				// 	}
-				SetPWM(R_1);
-				// Serial.println("red");
-				break;
-
-			case b_G:   // green
-				// if (ON == true) {
-				// 	FADE = false;
-				// 	SetPWM(G_1);
-				// 	}
-				SetPWM(G_1);
-				// Serial.println("green");
-				break;
-
-			case b_B:   // blue
-				// if (ON == true) {
-				// 	// LED(0, 0, 254);
-				// 	FADE = false;
-				// 	SetPWM(B_1);
-				// 	}
-				SetPWM(B_1);
-				// Serial.println("blue");
-				break;
-
-			case b_W:   // white
-				// if (ON == true) {
-				// 	// LED(254, 254, 254);
-				// 	FADE = false;
-				// 	SetPWM(WHITE);
-				// 	}
-				SetPWM(WHITE);
-				// Serial.println("white");
-				break;
-
-			case b_c4_r5:   // fade
-				if (ON == true) {
-					// LED(254, 254, 254);
-					if (FADE == false) {FADE = true;}
-					else {FADE = false;}
-					}
-				// Serial.println("fade");
-				break;
-
-			} // end of switch (results.value)
-			irrecv.resume();
-		} // end of if (irrecv.decode(&results))
-}  // end of void CatchRemoteSignals()
 
 ////////////////
 /* FUNCTIONS" */
 ////////////////
 
 
-/*
-void LED(int vred, int vgreen, int vblue)
-{
-// analogWrite(, vred);
-// analogWrite(GREEN, vgreen);
-// analogWrite(BLUE, vblue);
-}*/
+void CatchRemoteSignals() {
+	if (irrecv.decode(&results)) {
+		switch (results.value) {
+			case b_ON:
+				ON = true;
+				SetPWM(WHITE);
+				break;
+
+			case b_OFF:
+				FADE = false;
+				SetPWM(OFF);
+				break;
+
+			case b_B_m:
+				if (BRIGHTNESS > 0){ BRIGHTNESS--;}
+				else {BRIGHTNESS=0;}
+				break;
+
+			case b_B_p:
+				if (BRIGHTNESS <= 255) { BRIGHTNESS++;}
+				else {BRIGHTNESS=255;}
+				break;
+
+			case b_W_1:   // white
+				SetPWM(WHITE);
+				break;
+
+			case b_W_4:   // fade
+				if (ON == true) {
+					if (FADE == false) {FADE = true;}
+					else {FADE = false;}
+					}
+				break;
+
+			case b_R_1:	SetPWM(R_1); break;
+			case b_R_2:	SetPWM(R_2); break;
+			case b_R_3:	SetPWM(R_3); break;
+			case b_R_4:	SetPWM(R_4); break;
+			case b_R_5:	SetPWM(R_5); break;
+
+			case b_G_1: SetPWM(G_1); break;
+			case b_G_2: SetPWM(G_2); break;
+			case b_G_3: SetPWM(G_3); break;
+			case b_G_4: SetPWM(G_4); break;
+			case b_G_5: SetPWM(G_5); break;
+
+			case b_B_1:	SetPWM(B_1); break;
+			case b_B_2:	SetPWM(B_2); break;
+			case b_B_3:	SetPWM(B_3); break;
+			case b_B_4:	SetPWM(B_4); break;
+			case b_B_5:	SetPWM(B_5); break;
+			} // end of switch (results.value)
+
+			irrecv.resume();
+		} // end of if (irrecv.decode(&results))
+}  // end of void CatchRemoteSignals()
 
 void LED() {
 	analogWrite(RED, PWM[0]);
 	analogWrite(GREEN, PWM[1]);
 	analogWrite(BLUE, PWM[2]);
-} // end of void LED()
+	} // end of void LED()
 
 void SetPWM(int color[3]) {
-		// for(int i = 0; i<3; i++) {PWM[i] = color[i];
-		// 	}
-
+		if (target_color[0] != color[0] || target_color[1] != color[1] || target_color[2] != color[2]) {
+			for (int i=0; i < 3; i++) {
+				target_color[i] = color[i];
+				start_color[i] = PWM[i];
+				range_color[i] = target_color[i] - start_color[i];
+				if (range_color[i]<0) {
+					angle[i] = deg_90;
+					}
+				else {
+					angle[i] = deg_270;
+					}
+				COLOR_CHANGE = true;
+				}
+			}
+		else {COLOR_CHANGE = false;}
 
 		if (ON == true) {
 			FADE = false;
-			for(int i = 0; i<3; i++)
-				{PWM[i] = color[i];
-				}
 			}
-		else {
-			for(int i = 0; i<3; i++)
-				{PWM[i] = 0;
-					}
-				}
+	} // void SetPWM(int color[3])
 
-
-}
-
-void Fade () {
-	// int step_multiplier = 1000;
+void SmoothChange () {
 	if (ON == true) {
 		if ( millis() % sinusDelay == 0)  {
 			for (int i=0; i < 3; i++) {
-				// round 0-360 angle
-				// angle += angle_step*(step_multiplier[i]/250);
+				if (target_color[i] != PWM[i]) {
+					angle[i] += angle_step*(color_step_multiplier[i]/100);
+					if (angle[i] >= deg_360) {
+						angle[i] = 0; }
+					sin_change[i] = ((sin(angle[i])/2)+0.5);  //  sinus float 0 - 1.000
+					int stepper = 0;
+					if (range_color[i]<255) {stepper = min(start_color[i], target_color[i]);}
+					PWM[i] = int(sin_change[i]*abs(range_color[i])+stepper);
+					} // end if
+				else {
+					angle[i] = deg_90;
+					}
+				} // end of for (int i=0; i < 3; i++)
+				if (PWM[0] == 0 && PWM[1] == 0 && PWM[2] == 0 &&
+					target_color[0] == 0 && target_color[1] == 0 && target_color[0] == 0) {
+					ON = false;
+					}
+				else {ON = true ;}
+			} // end of if ( millis() % sinusDelay == 0)
+		} // end of if (ON == true)
+	} // end of void Fade ()
+
+void Fade () {
+	if (ON == true) {
+		if ( millis() % sinusDelay == 0)  {
+			for (int i=0; i < 3; i++) {
 				angle[i] += angle_step*(step_multiplier[i]/100);
 				if (angle[i] >= deg_360) {
 					angle[i] = 0; }
-				//sin_change[i] = ((sin(angle[i])/2)+0.5);  //  sinus float 0 - 1.000
 				sin_change[i] = ((sin(angle[i])/2)+0.5);  //  sinus float 0 - 1.000
 				PWM[i] = int(sin_change[i]*BRIGHTNESS);
-				// Serial.println(PWM[i]);
-				}  // end of if ( millis() % sinusDelay == 0)
+				}  // end of for
 			} // end of if ( millis() % sinusDelay == 0)
 		} // end of if (ON == true)
 	} // end of void Fade ()
 
 void PrintPWM() {
     if ( millis() % 200 == 0) {
-        // Serial.print("R: ");
         Serial.print(PWM[0]);
-		// Serial.print("\t");
-        // Serial.print(step_multiplier[0]);
-		// Serial.print("\t");
-		// Serial.print(angle[0]);
-		// Serial.print("\t");
-		// Serial.print(sin_change[0]);
-        //
-        // Serial.print("\t G: ");
 		Serial.print(" ");
         Serial.print(PWM[1]);
-		// Serial.print("\t");
-		// Serial.print(step_multiplier[1]);
-		// Serial.print("\t");
-		// Serial.print(angle[1]);
-		// Serial.print("\t");
-		// Serial.print(sin_change[1]);
-        //
-        // Serial.print("\t B: ");
 		Serial.print(" ");
         Serial.print(PWM[2]);
-		// Serial.print("\t");
-		// Serial.print(step_multiplier[2]);
-		// Serial.print("\t");
-		// Serial.print(angle[2]);
-		// Serial.print("\t");
-		// Serial.print(sin_change[2]);
-
-		Serial.print(" ");
-        Serial.print(millis());
-        //
-		// Serial.print(" ");
-		// Serial.print(ON);
-
         Serial.print("\n");
-
         }
     } // end of void PrintPWM()

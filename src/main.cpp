@@ -2,45 +2,7 @@
 #include <Arduino.h>
 #include <IRremote.h>
 
-#define b_B_m 0xF7807F
-#define b_B_p 0xF700FF
-#define b_OFF 0xF740BF
-#define b_ON 0xF7C03F
-
-#define b_R_1 0xF720DF
-#define b_R_2 0xF710EF
-#define b_R_3 0xF730CF
-#define b_R_4 0xF708F7
-#define b_R_5 0xF728D7
-
-#define b_G_1 0xF7A05F
-#define b_G_2 0xF7906F
-#define b_G_3 0xF7B04F
-#define b_G_4 0xF78877
-#define b_G_5 0xF7A857
-
-#define b_B_1 0xF7609F
-#define b_B_2 0xF750AF
-#define b_B_3 0xF7708F
-#define b_B_4 0xF748B7
-#define b_B_5 0xF76897
-
-#define b_W_1 0xF7E01F
-#define b_W_2 0xF7D02F
-#define b_W_3 0xF7F00F
-#define b_W_4 0xF7C837
-#define b_W_5 0xF7E817
-
-/* REMOTE BUTTONS LAYOUT AND CODES
-b_Bp	0xF700FF	b_Bm	0xF7807F	b_OFF 	0xF740BF	b_ON	0xF7C03F
-b_R_1	0xF720DF	b_G_1	0xF7A05F	b_B_1	0xF7609F	b_W_1	0xF7E01F
-b_R_2	0xF710EF	b_G_2	0xF7906F	b_B_2	0xF750AF	b_W_2	0xF7D02F
-b_R_3	0xF730CF	b_G_3	0xF7B04F	b_B_3	0xF7708F	b_W_3	0xF7F00F
-b_R_4	0xF708F7	b_G_4	0xF78877	b_B_4	0xF748B7	b_W_4	0xF7C837
-b_R_5	0xF728D7	b_G_5	0xF7A857	b_B_5	0xF76897	b_W_5	0xF7E817
-*/
-
-// PINSC
+// PINS
 #define RED 10
 #define GREEN 5
 #define BLUE 3
@@ -58,6 +20,24 @@ void PrintPWM();
 
 IRrecv irrecv(irPin);
 decode_results results;
+
+/* REMOTE BUTTONS LAYOUT AND CODES
+b_B_p	0xF700FF	b_B_m	0xF7807F	b_OFF 	0xF740BF	b_ON	0xF7C03F
+b_R_1	0xF720DF	b_G_1	0xF7A05F	b_B_1	0xF7609F	b_W_1	0xF7E01F
+b_R_2	0xF710EF	b_G_2	0xF7906F	b_B_2	0xF750AF	b_W_2	0xF7D02F
+b_R_3	0xF730CF	b_G_3	0xF7B04F	b_B_3	0xF7708F	b_W_3	0xF7F00F
+b_R_4	0xF708F7	b_G_4	0xF78877	b_B_4	0xF748B7	b_W_4	0xF7C837
+b_R_5	0xF728D7	b_G_5	0xF7A857	b_B_5	0xF76897	b_W_5	0xF7E817
+*/
+
+enum codes{
+b_B_p =	0xF700FF,	b_B_m =	0xF7807F,	b_OFF =	0xF740BF,	b_ON =	0xF7C03F,
+b_R_1 =	0xF720DF,	b_G_1 =	0xF7A05F,	b_B_1 =	0xF7609F,	b_W_1 =	0xF7E01F,
+b_R_2 =	0xF710EF,	b_G_2 =	0xF7906F,	b_B_2 =	0xF750AF,	b_W_2 =	0xF7D02F,
+b_R_3 =	0xF730CF,	b_G_3 =	0xF7B04F,	b_B_3 =	0xF7708F,	b_W_3 =	0xF7F00F,
+b_R_4 =	0xF708F7,	b_G_4 =	0xF78877,	b_B_4 =	0xF748B7,	b_W_4 =	0xF7C837,
+b_R_5 =	0xF728D7,	b_G_5 =	0xF7A857,	b_B_5 =	0xF76897,	b_W_5 =	0xF7E817
+};
 
 float deg_90 = HALF_PI;
 float deg_180 = PI;

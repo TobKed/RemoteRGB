@@ -61,7 +61,6 @@ float color_step_multiplier[3] = {300, 300, 300};
 bool ON = false;
 bool FADE = false;
 bool COLOR_CHANGE = true;
-bool COLOR_UP[3] = {true, true, true};
 
 // COLORS
 int OFF[3] = {0, 0, 0};

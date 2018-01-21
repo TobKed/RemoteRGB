@@ -49,6 +49,7 @@ unsigned long sinusDelay = 5;
 
 int PWM[3] = {0, 0, 0};  // red, green, blue
 int brightness = 255;
+float brightness_coefficient = 1.0;
 float fade_step_multiplier = 300;
 float angle[3] = {deg_270, deg_270, deg_270};
 float sin_change[3] = {0, 0, 0};
@@ -61,7 +62,6 @@ float color_step_multiplier[3] = {300, 300, 300};
 bool ON = false;
 bool FADE = false;
 bool COLOR_CHANGE = true;
-bool COLOR_UP[3] = {true, true, true};
 
 // COLORS
 int OFF[3] = {0, 0, 0};
@@ -248,7 +248,6 @@ void CatchRemoteSignals() {
 }  // end of void CatchRemoteSignals()
 
 void LED() {
-  float brightness_coefficient;
   brightness_coefficient = brightness / 255.0;
   analogWrite(RED, int(PWM[0] * brightness_coefficient));
   analogWrite(GREEN, int(PWM[1] * brightness_coefficient));
@@ -327,11 +326,12 @@ void Fade() {
 
 void PrintPWM() {
   if (millis() % 200 == 0) {
-    Serial.print(PWM[0]);
+	brightness_coefficient = brightness / 255.0;
+    Serial.print(int(PWM[0]*brightness_coefficient));
     Serial.print(" ");
-    Serial.print(PWM[1]);
+    Serial.print(int(PWM[1]*brightness_coefficient));
     Serial.print(" ");
-    Serial.print(PWM[2]);
+    Serial.print(int(PWM[2]*brightness_coefficient));
     Serial.print("\n");
   }
 }  // end of void PrintPWM()
